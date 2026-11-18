@@ -1,0 +1,110 @@
+# Prometheus configuration for the demo stack.
+#
+# All scrape targets live in the file_sd directory (/etc/prometheus/file_sd
+# inside the prometheus container, /data/file_sd inside promui) and are
+# managed from the promui web UI — no Prometheus restarts needed.
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus itself.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Linux hosts running node_exporter on :9100.
+  # The port is stripped from the instance label so it shows the bare host.
+  - job_name: node_exporter
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/node_exporter_*.yml
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__address__]
+        action: replace
+        target_label: instance
+        regex: (.*):\d+
+
+  # Windows hosts running windows_exporter on :9182.
+  # The port is stripped from the instance label so it shows the bare host.
+  - job_name: windows_exporter
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/windows_exporter_*.yml
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__address__]
+        action: replace
+        target_label: instance
+        regex: (.*):\d+
+
+  # ICMP (ping) probes via the blackbox exporter.
+  - job_name: blackbox_icmp
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/blackbox_icmp_*.yml
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # HTTP(S) availability checks (module http_2xx).
+  - job_name: blackbox_http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/blackbox_http_*.yml
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Raw TCP port checks (module tcp_connect).
+  - job_name: blackbox_tcp
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/blackbox_tcp_*.yml
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # TLS handshake / certificate checks (module tls_connect).
+  - job_name: blackbox_tls
+    metrics_path: /probe
+    params:
+      module: [tls_connect]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/blackbox_tls_*.yml
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

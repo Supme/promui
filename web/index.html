@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>promui — files_sd manager</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>promui</h1>
+  <p class="subtitle">Prometheus file_sd configuration manager</p>
+</header>
+<main>
+  <section id="status" class="hidden">
+    <div id="status-error" class="error hidden"></div>
+  </section>
+
+  <section>
+    <h2>Create file</h2>
+    <p class="hint">A new empty file <code>&lt;job&gt;_&lt;id&gt;.yml</code> is created in <code id="files-sd-dir"></code>. Warnings appear when the current prometheus.yml globs would not pick it up.</p>
+    <form id="create-form" class="create-form">
+      <label>Job
+        <select id="create-job-select">
+          <option value="">— select a job —</option>
+          <option value="__custom__">— new job name… —</option>
+        </select>
+        <input id="create-job" name="job" required placeholder="myjob" list="job-names" class="hidden">
+        <datalist id="job-names"></datalist>
+      </label>
+      <label>ID
+        <input id="create-id" name="id" required pattern="[a-zA-Z0-9._-]+" placeholder="a1" title="a-z A-Z 0-9 . _ -">
+      </label>
+      <button type="submit">Create</button>
+    </form>
+    <div id="create-warning" class="warning hidden">
+      <p></p>
+      <pre class="snippet"></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Edit existing file</h2>
+    <form id="edit-form" class="create-form">
+      <label>File
+        <select id="edit-file">
+          <option value="">— select a file —</option>
+        </select>
+      </label>
+      <button type="submit" id="edit-open" disabled>Open in editor</button>
+    </form>
+  </section>
+
+  <section id="jobs-section">
+    <h2>Scrape jobs</h2>
+    <p id="config-error" class="error hidden"></p>
+    <div id="jobs" class="cards"></div>
+  </section>
+
+  <section id="others-section" class="hidden">
+    <h2>Others (not read by any job)</h2>
+    <p class="hint">These files match no <code>files</code> glob of any <code>file_sd_configs</code>; Prometheus does not load them.</p>
+    <ul id="others" class="file-list"></ul>
+  </section>
+
+  <details id="targets-section" class="targets-details">
+    <summary>Targets</summary>
+    <p class="hint">Loaded on demand; with many targets the list is long.</p>
+    <p id="targets-error" class="error hidden"></p>
+    <div class="table-wrap">
+      <table id="targets-table">
+        <thead>
+          <tr><th>Scrape URL</th><th>Job</th><th>Health</th><th>Last error</th><th>Last scrape</th></tr>
+        </thead>
+        <tbody id="targets-body"></tbody>
+      </table>
+    </div>
+  </details>
+</main>
+
+<!-- File editor: a modal dialog, so the app stays on one page. -->
+<dialog id="editor-modal" aria-labelledby="editor-title">
+  <div class="modal-head">
+    <h2 id="editor-title">Edit file</h2>
+    <button id="editor-close" class="secondary" type="button" title="Close (Esc)">✕</button>
+  </div>
+  <p class="hint">Editing rewrites the whole file: comments and non-standard fields are lost.</p>
+  <div id="message" class="hidden"></div>
+
+  <div id="groups"></div>
+  <button id="add-group" class="secondary" type="button">+ Add group</button>
+
+  <details class="labels-help">
+    <summary>Special labels reference</summary>
+    <dl>
+      <dt><code>__metrics_path__</code></dt>
+      <dd>Overrides the metrics path of the scrape (must start with <code>/</code>).</dd>
+      <dt><code>__scheme__</code></dt>
+      <dd><code>http</code> or <code>https</code>.</dd>
+      <dt><code>__scrape_interval__</code></dt>
+      <dd>Per-group scrape interval, a Prometheus duration like <code>30s</code>, <code>5m</code>, <code>1h30m</code>.</dd>
+      <dt><code>__scrape_timeout__</code></dt>
+      <dd>Per-group scrape timeout; must not exceed the interval.</dd>
+      <dt><code>__param_&lt;name&gt;</code></dt>
+      <dd>Sets the URL query parameter <code>name</code> for the scrape.</dd>
+    </dl>
+    <p class="hint">Special labels act on the group level: targets needing different <code>metrics_path</code> or <code>scheme</code> belong in separate groups. Unknown <code>__…</code> labels are saved without validation.</p>
+  </details>
+
+  <div class="actions">
+    <button id="save" type="button">Save</button>
+    <button id="delete" class="danger" type="button">Delete file</button>
+  </div>
+</dialog>
+<footer class="page-footer">promui {{.Version}}</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>

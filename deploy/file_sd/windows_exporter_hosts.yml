@@ -1,0 +1,6 @@
+# windows_exporter targets (job: windows_exporter).
+- targets:
+    - demo-win-1.example.com:9182
+    - demo-win-2.example.com:9182
+  labels:
+    env: demo

@@ -1,0 +1,6 @@
+# HTTP availability targets (job: blackbox_http, module: http_2xx).
+- targets:
+    - https://example.com
+    - https://www.wikipedia.org
+  labels:
+    env: demo

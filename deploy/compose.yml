@@ -1,0 +1,75 @@
+# Demo stack: Prometheus + Blackbox exporter + promui.
+#
+#   docker compose up -d --build
+#
+#   prometheus          http://localhost:9090
+#   blackbox-exporter   http://localhost:9115
+#   promui              http://localhost:8080
+#
+# promui edits the files in ./file_sd (bind-mounted into both containers);
+# Prometheus picks the changes up automatically (file_sd refresh interval)
+# without a restart.
+
+services:
+  prometheus:
+    image: prom/prometheus:v3
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # Where the file_sd directory lives inside THIS container.
+      # promui sees the same directory as /data/file_sd (see below).
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Same host directory promui edits; Prometheus reads it here.
+      - ./file_sd:/etc/prometheus/file_sd
+      - prometheus_data:/prometheus
+    depends_on:
+      - blackbox-exporter
+    restart: unless-stopped
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0
+    command:
+      - --config.file=/etc/blackbox_exporter/blackbox.yml
+    # ICMP probes need raw sockets.
+    cap_add:
+      - NET_RAW
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/blackbox.yml:ro
+    restart: unless-stopped
+
+  promui:
+    # The Dockerfile is in the repository root, one level above deploy/.
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        VERSION: "0.0.1"
+    environment:
+      # Inside the promui container the file_sd directory is /data/file_sd
+      # (bind-mounted from ./file_sd); Prometheus mounts the same directory
+      # as /etc/prometheus/file_sd, and that is the prefix used in the
+      # prometheus.yml globs.
+      PROMUI_FILES_SD_DIR: /data/file_sd
+      PROMUI_FILES_SD_MOUNT: /etc/prometheus/file_sd
+      PROMUI_PROMETHEUS_URL: http://prometheus:9090
+      PROMUI_LISTEN: 0.0.0.0:8080
+      # To enable Basic Auth, uncomment and provide the file:
+      # PROMUI_HTPASSWD: /etc/promui/htpasswd
+    ports:
+      - "8080:8080"
+    volumes:
+      # The examples from ./file_sd are right there from the first start;
+      # edits in the UI land directly in this host directory.
+      - ./file_sd:/data/file_sd
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:

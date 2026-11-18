@@ -1,0 +1,6 @@
+# TLS endpoint targets (job: blackbox_tls, module: tls_connect).
+- targets:
+    - example.com:443
+    - www.wikipedia.org:443
+  labels:
+    env: demo

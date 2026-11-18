@@ -1,0 +1,6 @@
+# ICMP ping targets (job: blackbox_icmp, module: icmp).
+- targets:
+    - 192.0.2.10
+    - 192.0.2.11
+  labels:
+    env: demo

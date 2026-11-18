@@ -1,0 +1,122 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --ink: #1c2733;
+  --muted: #5c6b7a;
+  --line: #d9dee5;
+  --accent: #c0392b;
+  --ok: #1e8e5a;
+  --warn-bg: #fdf3d7;
+  --warn-line: #e0c36a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+header h1 { margin: 0; font-size: 1.3rem; }
+header h1 a { color: inherit; text-decoration: none; }
+.subtitle { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
+
+main { max-width: 960px; margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+
+h2 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+.hint { color: var(--muted); font-size: .85rem; margin: .25rem 0 .75rem; }
+code { background: #eef1f4; padding: 0 .25em; border-radius: 3px; font-size: .9em; }
+
+.hidden { display: none !important; }
+.error { color: var(--accent); background: #fdeceb; border: 1px solid #f2b8b5; padding: .5rem .75rem; border-radius: 6px; margin: .5rem 0; }
+.warning { color: #7a5d00; background: var(--warn-bg); border: 1px solid var(--warn-line); padding: .5rem .75rem; border-radius: 6px; margin: .5rem 0; }
+.notice { color: var(--ok); background: #e8f6ef; border: 1px solid #9ed6bd; padding: .5rem .75rem; border-radius: 6px; margin: .5rem 0; }
+.snippet { background: #2b303b; color: #e6e6e6; padding: .6rem .75rem; border-radius: 6px; overflow-x: auto; font-size: .8rem; margin: .5rem 0 0; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .75rem; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .75rem 1rem; }
+.card h3 { margin: 0 0 .25rem; font-size: .95rem; }
+.card .meta { color: var(--muted); font-size: .8rem; margin: 0 0 .5rem; }
+.card ul { margin: .25rem 0 0; padding-left: 1.1rem; font-size: .85rem; }
+.card a { color: #1a5fb4; text-decoration: none; }
+.card a:hover { text-decoration: underline; }
+.card .globs { font-size: .75rem; color: var(--muted); margin: .25rem 0 0; }
+.shared-tag { display: inline-block; font-size: .7rem; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3em; margin-left: .4em; vertical-align: middle; }
+
+.file-list { font-size: .9rem; padding-left: 1.2rem; }
+.file-list a { color: #1a5fb4; }
+
+.table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+th, td { text-align: left; padding: .45rem .75rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+td.err { color: var(--accent); }
+.health-up { color: var(--ok); }
+.health-down { color: var(--accent); }
+
+.create-form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .75rem 1rem; }
+.create-form label { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; color: var(--muted); }
+.create-form input, .create-form select { padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 6px; font-size: .9rem; min-width: 12rem; background: var(--bg); color: inherit; }
+.create-form button:disabled { opacity: .5; cursor: not-allowed; }
+
+.targets-details { margin-top: 1.5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: .5rem 1rem; }
+.targets-details summary { cursor: pointer; font-weight: 600; }
+
+.page-footer { margin-top: 2rem; padding: .5rem 0 1rem; font-size: .75rem; color: var(--muted); text-align: center; }
+
+button { background: #1a5fb4; color: #fff; border: none; border-radius: 6px; padding: .5rem 1rem; font-size: .9rem; cursor: pointer; }
+button:hover { background: #174ea0; }
+button.secondary { background: #eef1f4; color: var(--ink); border: 1px solid var(--line); }
+button.danger { background: var(--accent); }
+
+.group { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .75rem 1rem; margin-bottom: .75rem; }
+.group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+.group-head h3 { margin: 0; font-size: .9rem; }
+.group label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
+.group textarea, .group input[type=text] { width: 100%; padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 6px; font-size: .85rem; font-family: inherit; }
+.group textarea { min-height: 3.5rem; resize: vertical; }
+
+.labels-row { display: flex; gap: .5rem; margin-bottom: .35rem; }
+.labels-row input { flex: 1; min-width: 0; }
+.labels-row button { padding: .2rem .5rem; font-size: .75rem; }
+
+.actions { display: flex; gap: .75rem; margin-top: 1rem; }
+
+.labels-help { margin-top: 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .5rem 1rem; font-size: .85rem; }
+.labels-help summary { cursor: pointer; font-weight: 600; }
+.labels-help dt { font-weight: 600; margin-top: .5rem; }
+.labels-help dd { margin: 0 0 .25rem; color: var(--muted); }
+
+/* Editor modal */
+dialog#editor-modal {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  width: min(680px, calc(100vw - 2rem));
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  background: var(--card);
+  color: var(--ink);
+}
+dialog#editor-modal::backdrop { background: rgba(28, 39, 51, .45); }
+.modal-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+.modal-head h2 { margin: 0; }
+#editor-modal .hint { margin: .35rem 0 .6rem; }
+#editor-modal .actions { margin-top: 1rem; }
+
+@media (max-width: 640px) {
+  main { padding: 1rem .75rem 3rem; }
+  .create-form input { min-width: 0; width: 100%; }
+  .create-form label { flex: 1 1 100%; }
+  th, td { white-space: normal; }
+}

@@ -1,0 +1,6 @@
+# TCP port targets (job: blackbox_tcp, module: tcp_connect).
+- targets:
+    - demo-mail.example.com:25
+    - demo-db.example.com:5432
+  labels:
+    env: demo

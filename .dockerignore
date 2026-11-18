@@ -1,0 +1,10 @@
+# Files not needed inside the build context.
+.git
+.tools
+download
+scripts
+upload
+*.tar.gz
+*.md
+compose.yml
+deploy

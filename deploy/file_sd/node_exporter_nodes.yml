@@ -1,0 +1,7 @@
+# node_exporter targets (job: node_exporter).
+# Managed in promui under node_exporter/.
+- targets:
+    - demo-node-1.example.com:9100
+    - demo-node-2.example.com:9100
+  labels:
+    env: demo
