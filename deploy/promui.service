@@ -1,0 +1,42 @@
+# promui — run as a systemd service.
+#
+# Install:
+#   sudo useradd --system --shell /usr/sbin/nologin promui
+#   sudo install -d -o promui -g promui /etc/prometheus/files_sd
+#   sudo install -m 755 promui /usr/local/bin/promui
+#   sudo cp deploy/promui.service /etc/systemd/system/promui.service
+#   sudo cp deploy/promui.env.example /etc/default/promui
+#   sudo vi /etc/default/promui
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now promui
+#
+# All configuration is via PROMUI_* environment variables loaded from
+# /etc/default/promui (see README.md for the full list).
+
+[Unit]
+Description=PromUI - web UI for Prometheus file_sd files
+Documentation=https://github.com/supme/promui
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=promui
+Group=promui
+EnvironmentFile=/etc/default/promui
+ExecStart=/usr/local/bin/promui
+Restart=on-failure
+RestartSec=5s
+
+# Basic hardening. ProtectSystem=full makes /usr, /boot and /etc
+# read-only, so the files_sd directory (usually /etc/prometheus/files_sd)
+# is re-opened for writing via ReadWritePaths=; adjust it if the
+# directory lives elsewhere under /usr, /boot or /etc.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/etc/prometheus/files_sd
+
+[Install]
+WantedBy=multi-user.target
