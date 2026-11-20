@@ -1,7 +1,7 @@
 # Prometheus configuration for the demo stack.
 #
-# All scrape targets live in the file_sd directory (/etc/prometheus/file_sd
-# inside the prometheus container, /data/file_sd inside promui) and are
+# All scrape targets live in the file_sd directory (/etc/prometheus/files_sd
+# inside the prometheus container, /data/files_sd inside promui) and are
 # managed from the promui web UI — no Prometheus restarts needed.
 
 global:
@@ -20,7 +20,7 @@ scrape_configs:
   - job_name: node_exporter
     file_sd_configs:
       - files:
-          - /etc/prometheus/file_sd/node_exporter_*.yml
+          - /etc/prometheus/files_sd/node_exporter_*.yml
         refresh_interval: 15s
     relabel_configs:
       - source_labels: [__address__]
@@ -33,7 +33,7 @@ scrape_configs:
   - job_name: windows_exporter
     file_sd_configs:
       - files:
-          - /etc/prometheus/file_sd/windows_exporter_*.yml
+          - /etc/prometheus/files_sd/windows_exporter_*.yml
         refresh_interval: 15s
     relabel_configs:
       - source_labels: [__address__]
@@ -48,9 +48,11 @@ scrape_configs:
       module: [icmp]
     file_sd_configs:
       - files:
-          - /etc/prometheus/file_sd/blackbox_icmp_*.yml
+          - /etc/prometheus/files_sd/blackbox_icmp_*.yml
         refresh_interval: 15s
     relabel_configs:
+      - target_label: alias
+        replacement: icmp
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
@@ -65,9 +67,11 @@ scrape_configs:
       module: [http_2xx]
     file_sd_configs:
       - files:
-          - /etc/prometheus/file_sd/blackbox_http_*.yml
+          - /etc/prometheus/files_sd/blackbox_http_*.yml
         refresh_interval: 15s
     relabel_configs:
+      - target_label: alias
+        replacement: http
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
@@ -82,9 +86,11 @@ scrape_configs:
       module: [tcp_connect]
     file_sd_configs:
       - files:
-          - /etc/prometheus/file_sd/blackbox_tcp_*.yml
+          - /etc/prometheus/files_sd/blackbox_tcp_*.yml
         refresh_interval: 15s
     relabel_configs:
+      - target_label: alias
+        replacement: tcp
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
@@ -99,9 +105,11 @@ scrape_configs:
       module: [tls_connect]
     file_sd_configs:
       - files:
-          - /etc/prometheus/file_sd/blackbox_tls_*.yml
+          - /etc/prometheus/files_sd/blackbox_tls_*.yml
         refresh_interval: 15s
     relabel_configs:
+      - target_label: alias
+        replacement: tls
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]

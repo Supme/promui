@@ -25,8 +25,7 @@
   embedded via `embed.FS` from `web/embed.go`; no npm build step.
 - `Dockerfile`, `docker-entrypoint.sh`, `.dockerignore` — multi-stage build
   (golang:1.27-alpine → alpine:3.21), unprivileged runtime user, su-exec.
-- `deploy/` — demo stack: `compose.yml` (prometheus, blackbox-exporter,
-  promui), `prometheus.yml`, `blackbox.yml`, `file_sd/` example targets.
+- `deploy/` — demo stack: `example/compose.yml` (prometheus, blackbox-exporter, promui) or `example/compose-auth.yml` with example basic auth, `example/prometheus.yml`, `example/blackbox.yml`, `example/files_sd/` example targets.
 
 ## Behavior rules
 

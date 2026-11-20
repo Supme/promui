@@ -9,8 +9,9 @@ import (
 )
 
 // real hashes of the password "secret"
-const bcryptLine = "admin:$2a$05$4juTqUbGwuaNkGhTeqLPqe9oRzmSyNId.WwlML1J2Rp9y7kcVq0rC"
-const apr1Line = "apr1user:$apr1$somesalt$..ZeRvGlKotUj3Cak5iHh."
+const bcrypt2aLine = "admin2a:$2a$05$4juTqUbGwuaNkGhTeqLPqe9oRzmSyNId.WwlML1J2Rp9y7kcVq0rC"
+const bcrypt2yLine = "admin2y:$2y$05$fBgMc0KXAvuMxGqSXpGwKua7K3A3FRmDhQIaHW7rGpb.zeqNTyOWq"
+const md5apr1Line = "apr1user:$apr1$somesalt$..ZeRvGlKotUj3Cak5iHh."
 
 func newAuthServer(t *testing.T, hashLine string) (*httptest.Server, string) {
 	t.Helper()
@@ -29,8 +30,8 @@ func newAuthServer(t *testing.T, hashLine string) (*httptest.Server, string) {
 	return srv, ht
 }
 
-func TestBasicAuthBcrypt(t *testing.T) {
-	srv, _ := newAuthServer(t, bcryptLine)
+func TestBasicAuthBcrypt2a(t *testing.T) {
+	srv, _ := newAuthServer(t, bcrypt2aLine)
 
 	// no credentials: 401 with challenge
 	resp, err := http.Get(srv.URL)
@@ -56,7 +57,7 @@ func TestBasicAuthBcrypt(t *testing.T) {
 
 	// correct password
 	req, _ = http.NewRequest("GET", srv.URL, nil)
-	req.SetBasicAuth("admin", "secret")
+	req.SetBasicAuth("admin2a", "secret")
 	resp, _ = http.DefaultClient.Do(req)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -64,8 +65,22 @@ func TestBasicAuthBcrypt(t *testing.T) {
 	}
 }
 
-func TestBasicAuthApr1(t *testing.T) {
-	srv, _ := newAuthServer(t, apr1Line)
+func TestBasicAuthBcrypt2y(t *testing.T) {
+	srv, _ := newAuthServer(t, bcrypt2yLine)
+	req, _ := http.NewRequest("GET", srv.URL, nil)
+	req.SetBasicAuth("admin2y", "secret")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("2y login: %d, want 200", resp.StatusCode)
+	}
+}
+
+func TestBasicAuthMd5Apr1(t *testing.T) {
+	srv, _ := newAuthServer(t, md5apr1Line)
 	req, _ := http.NewRequest("GET", srv.URL, nil)
 	req.SetBasicAuth("apr1user", "secret")
 	resp, err := http.DefaultClient.Do(req)
@@ -79,7 +94,7 @@ func TestBasicAuthApr1(t *testing.T) {
 }
 
 func TestHtpasswdReload(t *testing.T) {
-	srv, ht := newAuthServer(t, bcryptLine)
+	srv, ht := newAuthServer(t, bcrypt2aLine)
 
 	// user missing at first
 	req, _ := http.NewRequest("GET", srv.URL, nil)
@@ -91,7 +106,7 @@ func TestHtpasswdReload(t *testing.T) {
 	}
 
 	// add bob externally; next request must accept him
-	if err := os.WriteFile(ht, []byte(bcryptLine+"\nbob:$2a$05$4juTqUbGwuaNkGhTeqLPqe9oRzmSyNId.WwlML1J2Rp9y7kcVq0rC\n"), 0o600); err != nil {
+	if err := os.WriteFile(ht, []byte(bcrypt2aLine+"\nbob:$2a$05$4juTqUbGwuaNkGhTeqLPqe9oRzmSyNId.WwlML1J2Rp9y7kcVq0rC\n"+bcrypt2yLine+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	req, _ = http.NewRequest("GET", srv.URL, nil)

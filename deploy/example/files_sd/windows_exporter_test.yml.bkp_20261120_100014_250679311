@@ -1,0 +1,3 @@
+- targets:
+    - test:9100
+  labels: {}
