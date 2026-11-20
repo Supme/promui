@@ -44,7 +44,7 @@ go vet ./... && go test ./...
 
 ```sh
 ./promui \
-  --files-sd-dir /var/lib/prometheus/files_sd \  # required, host dir
+  --files-sd-dir /etc/prometheus/files_sd \       # required, host dir
   --prometheus-url http://127.0.0.1:9090 \       # read-only API
   --listen 127.0.0.1:8080 \                      # UI address
   --htpasswd /etc/promui/htpasswd                # optional Basic Auth
@@ -67,6 +67,27 @@ go vet ./... && go test ./...
 окружением.
 
 Файл htpasswd создаётся вне promui, например `htpasswd -B -c file admin`.
+
+## Systemd
+
+Запуск promui как сервис: юнит — `deploy/promui.service`,
+конфигурация — переменные `PROMUI_*` в `/etc/default/promui`
+(те же имена, что у флагов; шаблон — `deploy/promui.env.example`).
+
+```sh
+sudo useradd --system --shell /usr/sbin/nologin promui
+sudo install -d -o promui -g promui /etc/prometheus/files_sd
+sudo install -m 755 promui /usr/local/bin/promui
+sudo cp deploy/promui.service /etc/systemd/system/promui.service
+sudo cp deploy/promui.env.example /etc/default/promui
+sudo vi /etc/default/promui
+sudo systemctl daemon-reload
+sudo systemctl enable --now promui
+```
+
+Сервис работает от непривилегированного пользователя `promui` и
+перезапускается при сбое; каталог files_sd должен быть доступен ему
+на запись.
 
 ## Docker
 

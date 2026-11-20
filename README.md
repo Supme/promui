@@ -41,7 +41,7 @@ go vet ./... && go test ./...
 
 ```sh
 ./promui \
-  --files-sd-dir /var/lib/prometheus/files_sd \  # required, host dir
+  --files-sd-dir /etc/prometheus/files_sd \       # required, host dir
   --prometheus-url http://127.0.0.1:9090 \       # read-only API
   --listen 127.0.0.1:8080 \                      # UI address
   --htpasswd /etc/promui/htpasswd                # optional Basic Auth
@@ -64,7 +64,25 @@ Flags can also be set through environment variables — `PROMUI_FILES_SD_DIR`,
 
 Create the htpasswd file outside promui, e.g. `htpasswd -B -c file admin`.
 
+## Systemd
 
+Run promui as a service: the unit is `deploy/promui.service`,
+configuration is the `PROMUI_*` variables in `/etc/default/promui`
+(same names as the flags; template: `deploy/promui.env.example`).
+
+```sh
+sudo useradd --system --shell /usr/sbin/nologin promui
+sudo install -d -o promui -g promui /etc/prometheus/files_sd
+sudo install -m 755 promui /usr/local/bin/promui
+sudo cp deploy/promui.service /etc/systemd/system/promui.service
+sudo cp deploy/promui.env.example /etc/default/promui
+sudo vi /etc/default/promui
+sudo systemctl daemon-reload
+sudo systemctl enable --now promui
+```
+
+The service runs as the unprivileged `promui` user and restarts on
+failure; the files_sd directory must be writable by that user.
 
 ## Docker
 
