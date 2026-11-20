@@ -83,7 +83,7 @@ button.danger { background: var(--accent); }
 .group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
 .group-head h3 { margin: 0; font-size: .9rem; }
 .group label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
-.group textarea, .group input[type=text] { width: 100%; padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 6px; font-size: .85rem; font-family: inherit; }
+.group textarea, .group input[type=text] { width: 100%; padding: .4rem .5rem; border: 1px solid var(--line); border-radius: 6px; font-size: .8rem; font-family: inherit; }
 .group textarea { min-height: 3.5rem; resize: vertical; }
 
 .labels-row { display: flex; gap: .5rem; margin-bottom: .35rem; }
@@ -92,7 +92,7 @@ button.danger { background: var(--accent); }
 
 .actions { display: flex; gap: .75rem; margin-top: 1rem; }
 
-.labels-help { margin-top: 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .5rem 1rem; font-size: .85rem; }
+.labels-help { margin-top: 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .5rem 1rem; font-size: .8rem; }
 .labels-help summary { cursor: pointer; font-weight: 600; }
 .labels-help dt { font-weight: 600; margin-top: .5rem; }
 .labels-help dd { margin: 0 0 .25rem; color: var(--muted); }
