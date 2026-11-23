@@ -8,8 +8,6 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -122,24 +120,24 @@ type FileView struct {
 
 // JobView is a scrape job with its file_sd_configs and matched files.
 type JobView struct {
-	Name          string             `json:"name"`
-	FileSDConfigs []prom.FileSDConfig `json:"fileSdConfigs"`
-	ScrapeInterval string            `json:"scrapeInterval"`
-	ScrapeTimeout  string            `json:"scrapeTimeout"`
-	MetricsPath    string            `json:"metricsPath"`
-	Scheme         string            `json:"scheme"`
-	Files          []FileView        `json:"files"`
+	Name           string              `json:"name"`
+	FileSDConfigs  []prom.FileSDConfig `json:"fileSdConfigs"`
+	ScrapeInterval string              `json:"scrapeInterval"`
+	ScrapeTimeout  string              `json:"scrapeTimeout"`
+	MetricsPath    string              `json:"metricsPath"`
+	Scheme         string              `json:"scheme"`
+	Files          []FileView          `json:"files"`
 }
 
 // ConfigView is the payload of GET /api/config.
 type ConfigView struct {
-	Jobs            []JobView `json:"jobs"`
-	Others          []string  `json:"others"`     // files no job reads
-	TargetsError string `json:"targetsError,omitempty"`
-	ConfigError  string `json:"configError,omitempty"`
-	FilesSDDir   string `json:"filesSdDir"`
-	MountPoint   string `json:"mountPoint"`
-	Version      string `json:"version"`
+	Jobs         []JobView `json:"jobs"`
+	Others       []string  `json:"others"` // files no job reads
+	TargetsError string    `json:"targetsError,omitempty"`
+	ConfigError  string    `json:"configError,omitempty"`
+	FilesSDDir   string    `json:"filesSdDir"`
+	MountPoint   string    `json:"mountPoint"`
+	Version      string    `json:"version"`
 }
 
 // buildConfigView assembles jobs, per-job file lists and Others from the
@@ -246,9 +244,9 @@ type CreateRequest struct {
 
 // CreateResponse reports the created file plus config warnings.
 type CreateResponse struct {
-	File     string `json:"file"`
-	Warning  string `json:"warning,omitempty"`
-	Snippet  string `json:"snippet,omitempty"`
+	File    string `json:"file"`
+	Warning string `json:"warning,omitempty"`
+	Snippet string `json:"snippet,omitempty"`
 }
 
 // handleCreateFile creates a new empty file and warns when the current
@@ -397,7 +395,7 @@ func (s *Server) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusInternalServerError, "backup failed: "+err.Error())
 		return
 	}
-	if err := os.Remove(filepath.Join(s.Dir.Path, name)); err != nil {
+	if err := s.Dir.Remove(name); err != nil {
 		httpError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -424,4 +422,3 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func httpError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
-

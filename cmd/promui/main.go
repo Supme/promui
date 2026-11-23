@@ -36,7 +36,6 @@ func main() {
 		return
 	}
 
-
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(log)
 
@@ -50,7 +49,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	dir := &filesd.Dir{Path: *filesSDDir}
+	dir, err := filesd.NewDir(*filesSDDir)
+	if err != nil {
+		log.Error("open files_sd dir", "dir", *filesSDDir, "err", err)
+		os.Exit(1)
+	}
 	client := prom.NewClient(*prometheusURL)
 	srv := web.NewServer(dir, client, web.Options{
 		FilesSDDir: *filesSDDir,

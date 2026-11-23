@@ -197,7 +197,85 @@ func TestValidName(t *testing.T) {
 
 func newDir(t *testing.T) *Dir {
 	t.Helper()
-	return &Dir{Path: t.TempDir()}
+	d, err := NewDir(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
+
+// newDirIn makes a files_sd dir inside parent so an escape would land
+// in parent, where the test can look for stray files.
+func newDirIn(t *testing.T, parent string) *Dir {
+	t.Helper()
+	dirPath := filepath.Join(parent, "files_sd")
+	if err := os.Mkdir(dirPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDir(dirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
+
+func TestTraversalBlocked(t *testing.T) {
+	parent := t.TempDir()
+	d := newDirIn(t, parent)
+	if err := d.WriteFile("../evil.yml", []byte("[]")); err == nil {
+		t.Fatal("WriteFile(\"../evil.yml\") must fail")
+	}
+	if _, err := d.Read("../x.yml"); err == nil {
+		t.Fatal("Read(\"../x.yml\") must fail")
+	}
+	if _, err := d.Backup("../x.yml"); err == nil {
+		t.Fatal("Backup(\"../x.yml\") must fail")
+	}
+	for _, job := range []string{"../evil", "../../tmp"} {
+		if err := d.Create(job, "x"); err == nil {
+			t.Fatalf("Create(job=%q) must fail", job)
+		}
+	}
+	// a sentinel outside the root must survive a Remove attempt
+	sentinel := filepath.Join(parent, "sentinel.yml")
+	if err := os.WriteFile(sentinel, []byte("[]"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Remove("../sentinel.yml"); err == nil {
+		t.Fatal("Remove(\"../sentinel.yml\") must fail")
+	}
+	if _, err := os.Stat(sentinel); err != nil {
+		t.Fatalf("sentinel removed: %v", err)
+	}
+	// nothing may have been created outside the root
+	for _, n := range []string{"evil.yml", "tmp_x.yml"} {
+		if _, err := os.Stat(filepath.Join(parent, n)); !os.IsNotExist(err) {
+			t.Fatalf("%s created outside the files_sd dir", n)
+		}
+	}
+}
+
+func TestSymlinkEscapeBlocked(t *testing.T) {
+	parent := t.TempDir()
+	d := newDirIn(t, parent)
+	dirPath := filepath.Join(parent, "files_sd")
+	outside := filepath.Join(parent, "secret.yml")
+	if err := os.WriteFile(outside, []byte("[]"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(dirPath, "link.yml")); err != nil {
+		t.Skipf("cannot create symlink: %v", err)
+	}
+	if _, err := d.Read("link.yml"); err == nil {
+		t.Fatal("Read must not follow a symlink out of the root")
+	}
+	// the symlink itself can be removed, without touching the target
+	if err := d.Remove("link.yml"); err != nil {
+		t.Fatalf("Remove of the symlink itself must work: %v", err)
+	}
+	if _, err := os.Stat(outside); err != nil {
+		t.Fatalf("symlink target removed: %v", err)
+	}
 }
 
 func TestCreateAndCollision(t *testing.T) {

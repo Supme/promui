@@ -54,7 +54,11 @@ func newTestServer(t *testing.T) (*Server, *httptest.Server, string) {
 	t.Cleanup(promSrv.Close)
 
 	dirPath := t.TempDir()
-	s := NewServer(&filesd.Dir{Path: dirPath}, prom.NewClient(promSrv.URL),
+	dir, err := filesd.NewDir(dirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := NewServer(dir, prom.NewClient(promSrv.URL),
 		Options{FilesSDDir: dirPath, MountPoint: "/files_sd"}, nil)
 	ui := httptest.NewServer(s.Handler())
 	t.Cleanup(ui.Close)
@@ -183,6 +187,10 @@ func TestCreateFileInvalid(t *testing.T) {
 	resp, _ = doJSON(t, "POST", ui.URL+"/api/files", map[string]string{"job": "node", "id": "a/b"})
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("bad id: status %d", resp.StatusCode)
+	}
+	resp, _ = doJSON(t, "POST", ui.URL+"/api/files", map[string]string{"job": "../evil", "id": "x"})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("traversal job: status %d", resp.StatusCode)
 	}
 }
 
