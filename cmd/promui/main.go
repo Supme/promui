@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"promui/internal/auth"
 	"promui/internal/filesd"
@@ -67,12 +68,22 @@ func main() {
 		log.Info("basic auth enabled", "htpasswd", *htpasswd)
 	}
 
+	// explicit server so every connection has a deadline: bounds
+	// slow/stuck requests (Slowloris) and frees idle keep-alives
+	httpSrv := &http.Server{
+		Addr:              *listen,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       2 * time.Minute,
+	}
 	log.Info("promui listening",
 		"listen", *listen,
 		"files_sd_dir", *filesSDDir,
 		"prometheus_url", *prometheusURL,
 		"auth", *htpasswd != "")
-	if err := http.ListenAndServe(*listen, handler); err != nil {
+	if err := httpSrv.ListenAndServe(); err != nil {
 		log.Error("server stopped", "err", err)
 		os.Exit(1)
 	}
