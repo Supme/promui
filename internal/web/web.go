@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
+	"mime"
 	"net/http"
 	"strings"
 	"sync"
@@ -252,6 +253,9 @@ type CreateResponse struct {
 // handleCreateFile creates a new empty file and warns when the current
 // prometheus.yml globs would not pick it up.
 func (s *Server) handleCreateFile(w http.ResponseWriter, r *http.Request) {
+	if !requireJSON(w, r) {
+		return
+	}
 	var req CreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid json body: "+err.Error())
@@ -339,6 +343,9 @@ func (s *Server) handlePutFile(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusBadRequest, "invalid file name")
 		return
 	}
+	if !requireJSON(w, r) {
+		return
+	}
 	var req PutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid json body: "+err.Error())
@@ -421,4 +428,20 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func httpError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+// maxBodyBytes caps request bodies (file contents are small).
+const maxBodyBytes = 10 << 20
+
+// requireJSON rejects non-JSON bodies and caps the body size. For POST
+// it also blocks cross-origin "simple" requests, which never carry
+// Content-Type: application/json.
+func requireJSON(w http.ResponseWriter, r *http.Request) bool {
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		httpError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
+		return false
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	return true
 }

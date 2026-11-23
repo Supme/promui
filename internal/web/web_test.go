@@ -313,3 +313,47 @@ func TestTargetsEndpoint(t *testing.T) {
 		t.Fatalf("payload = %v", out)
 	}
 }
+
+func TestRejectsNonJSONBody(t *testing.T) {
+	_, ui, _ := newTestServer(t)
+	for _, tc := range []struct{ method, path string }{
+		{"POST", "/api/files"},
+		{"PUT", "/api/files/node_a.yml"},
+	} {
+		req, _ := http.NewRequest(tc.method, ui.URL+tc.path, strings.NewReader(`{"job":"node","id":"a"}`))
+		req.Header.Set("Content-Type", "text/plain")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnsupportedMediaType {
+			t.Errorf("%s %s text/plain: status %d, want 415", tc.method, tc.path, resp.StatusCode)
+		}
+	}
+
+	req, _ := http.NewRequest("POST", ui.URL+"/api/files", strings.NewReader(`{"job":"node","id":"x"}`))
+	resp, err := http.DefaultClient.Do(req) // no Content-Type at all
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnsupportedMediaType {
+		t.Fatalf("missing Content-Type: status %d, want 415", resp.StatusCode)
+	}
+}
+
+func TestRejectsOversizedBody(t *testing.T) {
+	_, ui, _ := newTestServer(t)
+	body := strings.Repeat("x", maxBodyBytes+1)
+	req, _ := http.NewRequest("POST", ui.URL+"/api/files", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("oversized body: status %d, want 400", resp.StatusCode)
+	}
+}
