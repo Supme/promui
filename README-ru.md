@@ -58,15 +58,19 @@ go vet ./... && go test ./...
 | `--prometheus-url` | `http://127.0.0.1:9090` | базовый URL Prometheus |
 | `--listen` | `127.0.0.1:8080` | адрес прослушивания |
 | `--htpasswd` | пустой (без auth) | файл htpasswd; перечитывается при каждом запросе; поддерживаются `$apr1$`, bcrypt, SHA-crypt |
+| `--proxy-header` | пустой (адрес соединения) | заголовок с IP клиента за доверенным proxy, например `X-Forwarded-For` (ключ блокировки при переборе) |
 | `--files-sd-mount` | `/files_sd` | путь, под которым Prometheus видит каталог (используется в предлагаемых фрагментах) |
 | `--version` | `false` | вывести версию и выйти |
 
 Флаги можно задать и переменными окружения — `PROMUI_FILES_SD_DIR`,
 `PROMUI_PROMETHEUS_URL`, `PROMUI_LISTEN`, `PROMUI_HTPASSWD`,
-`PROMUI_FILES_SD_MOUNT`; явно переданный флаг имеет приоритет над
-окружением.
+`PROMUI_PROXY_HEADER`, `PROMUI_FILES_SD_MOUNT`; явно переданный флаг
+имеет приоритет над окружением.
 
 Файл htpasswd создаётся вне promui, например `htpasswd -B -c file admin`.
+
+Клиент блокируется на 15 минут после 5 неудачных входов в течение 10
+минут (ключ — адрес соединения, за proxy — значение `--proxy-header`).
 
 ## Systemd
 

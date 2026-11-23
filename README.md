@@ -55,14 +55,20 @@ Flags:
 | `--prometheus-url` | `http://127.0.0.1:9090` | Prometheus base URL |
 | `--listen` | `127.0.0.1:8080` | listen address |
 | `--htpasswd` | empty (no auth) | htpasswd file; re-read per request; supports `$apr1$`, bcrypt, SHA-crypt |
+| `--proxy-header` | empty (use the connection address) | header with the client IP behind a trusted proxy, e.g. `X-Forwarded-For` (used as the lockout key) |
 | `--files-sd-mount` | `/files_sd` | path under which Prometheus sees the directory (used in suggested snippets) |
 | `--version` | `false` | print version and exit |
 
 Flags can also be set through environment variables — `PROMUI_FILES_SD_DIR`,
 `PROMUI_PROMETHEUS_URL`, `PROMUI_LISTEN`, `PROMUI_HTPASSWD`,
-`PROMUI_FILES_SD_MOUNT`; an explicitly passed flag wins over the environment.
+`PROMUI_PROXY_HEADER`, `PROMUI_FILES_SD_MOUNT`; an explicitly passed
+flag wins over the environment.
 
 Create the htpasswd file outside promui, e.g. `htpasswd -B -c file admin`.
+
+A client is locked out for 15 minutes after 5 failed logins within 10
+minutes (keyed by the connection address, or the `--proxy-header` value
+behind a proxy).
 
 ## Systemd
 

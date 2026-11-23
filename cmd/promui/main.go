@@ -27,6 +27,7 @@ func main() {
 		prometheusURL = flag.String("prometheus-url", envStr("PROMUI_PROMETHEUS_URL", "http://127.0.0.1:9090"), "Prometheus base URL (read-only API)")
 		listen        = flag.String("listen", envStr("PROMUI_LISTEN", "127.0.0.1:8080"), "listen address")
 		htpasswd      = flag.String("htpasswd", envStr("PROMUI_HTPASSWD", ""), "htpasswd file for Basic Auth (empty: no authentication)")
+		proxyHeader   = flag.String("proxy-header", envStr("PROMUI_PROXY_HEADER", ""), "header with the client IP behind a trusted proxy, e.g. X-Forwarded-For (empty: use the connection address)")
 		mountPoint    = flag.String("files-sd-mount", envStr("PROMUI_FILES_SD_MOUNT", "/files_sd"), "path under which Prometheus mounts the files_sd directory (for config snippets)")
 		showVersion   = flag.Bool("version", false, "print version and exit")
 	)
@@ -64,7 +65,7 @@ func main() {
 
 	var handler http.Handler = srv.Handler()
 	if *htpasswd != "" {
-		handler = auth.NewHtpasswd(*htpasswd).Middleware(handler)
+		handler = auth.NewHtpasswd(*htpasswd, *proxyHeader).Middleware(handler)
 		log.Info("basic auth enabled", "htpasswd", *htpasswd)
 	}
 

@@ -13,14 +13,14 @@ const bcrypt2aLine = "admin2a:$2a$05$4juTqUbGwuaNkGhTeqLPqe9oRzmSyNId.WwlML1J2Rp
 const bcrypt2yLine = "admin2y:$2y$05$fBgMc0KXAvuMxGqSXpGwKua7K3A3FRmDhQIaHW7rGpb.zeqNTyOWq"
 const md5apr1Line = "apr1user:$apr1$somesalt$..ZeRvGlKotUj3Cak5iHh."
 
-func newAuthServer(t *testing.T, hashLine string) (*httptest.Server, string) {
+func newAuthServer(t *testing.T, hashLine, proxyHeader string) (*httptest.Server, string) {
 	t.Helper()
 	dir := t.TempDir()
 	ht := filepath.Join(dir, "htpasswd")
 	if err := os.WriteFile(ht, []byte(hashLine+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	h := NewHtpasswd(ht)
+	h := NewHtpasswd(ht, proxyHeader)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -31,7 +31,7 @@ func newAuthServer(t *testing.T, hashLine string) (*httptest.Server, string) {
 }
 
 func TestBasicAuthBcrypt2a(t *testing.T) {
-	srv, _ := newAuthServer(t, bcrypt2aLine)
+	srv, _ := newAuthServer(t, bcrypt2aLine, "")
 
 	// no credentials: 401 with challenge
 	resp, err := http.Get(srv.URL)
@@ -66,7 +66,7 @@ func TestBasicAuthBcrypt2a(t *testing.T) {
 }
 
 func TestBasicAuthBcrypt2y(t *testing.T) {
-	srv, _ := newAuthServer(t, bcrypt2yLine)
+	srv, _ := newAuthServer(t, bcrypt2yLine, "")
 	req, _ := http.NewRequest("GET", srv.URL, nil)
 	req.SetBasicAuth("admin2y", "secret")
 	resp, err := http.DefaultClient.Do(req)
@@ -80,7 +80,7 @@ func TestBasicAuthBcrypt2y(t *testing.T) {
 }
 
 func TestBasicAuthMd5Apr1(t *testing.T) {
-	srv, _ := newAuthServer(t, md5apr1Line)
+	srv, _ := newAuthServer(t, md5apr1Line, "")
 	req, _ := http.NewRequest("GET", srv.URL, nil)
 	req.SetBasicAuth("apr1user", "secret")
 	resp, err := http.DefaultClient.Do(req)
@@ -94,7 +94,7 @@ func TestBasicAuthMd5Apr1(t *testing.T) {
 }
 
 func TestHtpasswdReload(t *testing.T) {
-	srv, ht := newAuthServer(t, bcrypt2aLine)
+	srv, ht := newAuthServer(t, bcrypt2aLine, "")
 
 	// user missing at first
 	req, _ := http.NewRequest("GET", srv.URL, nil)
@@ -120,7 +120,7 @@ func TestHtpasswdReload(t *testing.T) {
 
 func TestMalformedHtpasswdNoPanic(t *testing.T) {
 	// a broken htpasswd file must yield 401, not crash the server
-	srv, _ := newAuthServer(t, "this is not valid:at all")
+	srv, _ := newAuthServer(t, "this is not valid:at all", "")
 	req, _ := http.NewRequest("GET", srv.URL, nil)
 	req.SetBasicAuth("admin", "secret")
 	resp, err := http.DefaultClient.Do(req)
@@ -130,5 +130,73 @@ func TestMalformedHtpasswdNoPanic(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("malformed file: %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestLockoutAfterRepeatedFailures(t *testing.T) {
+	srv, _ := newAuthServer(t, bcrypt2aLine, "")
+	// 5 failed logins within the window lock the client
+	for i := 0; i < 5; i++ {
+		req, _ := http.NewRequest("GET", srv.URL, nil)
+		req.SetBasicAuth("admin2a", "wrong")
+		resp, _ := http.DefaultClient.Do(req)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: %d, want 401", i+1, resp.StatusCode)
+		}
+	}
+	// while locked, even the correct password is rejected
+	req, _ := http.NewRequest("GET", srv.URL, nil)
+	req.SetBasicAuth("admin2a", "secret")
+	resp, _ := http.DefaultClient.Do(req)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("locked: %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestLockoutPerClientProxyHeader(t *testing.T) {
+	srv, _ := newAuthServer(t, bcrypt2aLine, "X-Forwarded-For")
+	// 5 failed logins from one client address
+	for i := 0; i < 5; i++ {
+		req, _ := http.NewRequest("GET", srv.URL, nil)
+		req.SetBasicAuth("admin2a", "wrong")
+		req.Header.Set("X-Forwarded-For", "10.1.1.1, 192.168.0.1")
+		resp, _ := http.DefaultClient.Do(req)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: %d, want 401", i+1, resp.StatusCode)
+		}
+	}
+	// a different client is not affected
+	req, _ := http.NewRequest("GET", srv.URL, nil)
+	req.SetBasicAuth("admin2a", "secret")
+	req.Header.Set("X-Forwarded-For", "10.1.1.2, 192.168.0.1")
+	resp, _ := http.DefaultClient.Do(req)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("other client: %d, want 200", resp.StatusCode)
+	}
+	// the locked client is still rejected with the correct password
+	req, _ = http.NewRequest("GET", srv.URL, nil)
+	req.SetBasicAuth("admin2a", "secret")
+	req.Header.Set("X-Forwarded-For", "10.1.1.1, 192.168.0.1")
+	resp, _ = http.DefaultClient.Do(req)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("locked client: %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestUnknownUserNotLoggedIn(t *testing.T) {
+	// single entry: the dummy hash is admin2a's own, so a different user
+	// with the matching password must still be rejected by the guard
+	srv, _ := newAuthServer(t, bcrypt2aLine, "")
+	req, _ := http.NewRequest("GET", srv.URL, nil)
+	req.SetBasicAuth("ghost", "secret")
+	resp, _ := http.DefaultClient.Do(req)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unknown user: %d, want 401", resp.StatusCode)
 	}
 }
